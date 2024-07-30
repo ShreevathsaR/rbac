@@ -1,16 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
 import './App.css'
+import axios from 'axios';
+import Signup from './components/Signup';
+import Login from './components/Login';
+import Home from './components/Home';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [users, setUsers] = useState([])
+  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
+  const [formType, setFormType] = useState('')
+
+  useEffect(() => {
+
+    axios.get('http://localhost:5000/users').then(users => {
+      setUsers(users.data);
+    })
+      .catch(err => {
+        console.log(err)
+      })
+  }, [users])
+
 
   return (
     <div>
-      <input placeholder='Email'></input>
-      <input placeholder='Password'></input>
-      <button>Submit</button>
+      {formType == '' && (
+        <>
+          <h1>Welcome Users!!</h1>
+          <a style={{ paddingRight: "2rem", cursor: "pointer" }} onClick={() => { setFormType("Signup") }}>SignUp</a>
+          <a style={{ cursor: "pointer" }} onClick={() => { setFormType("Login") }}>Login</a>
+          <div>
+            {
+              users.map((user) => {
+                return <h3>{user.email}</h3>
+              })
+            }
+          </div>
+        </>
+      )}
+      {formType == 'Signup' && (
+        <Signup />
+      )}
+      {formType == 'Login' && (
+        <Login />
+      )}
+      {formType == 'Home' && (
+        <Home />
+      )}
     </div>
   )
 }

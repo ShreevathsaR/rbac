@@ -26,7 +26,7 @@ function App() {
     <div>
       {formType == '' && (
         <>
-          <h1>Welcome Users!!</h1>
+          <h1>Welcome!!</h1>
           <a style={{ paddingRight: "2rem", cursor: "pointer" }} onClick={() => { setFormType("Signup") }}>SignUp</a>
           <a style={{ cursor: "pointer" }} onClick={() => { setFormType("Login") }}>Login</a>
           <div>
@@ -39,10 +39,10 @@ function App() {
         </>
       )}
       {formType == 'Signup' && (
-        <Signup />
+        <Signup setFormType={setFormType}/>
       )}
       {formType == 'Login' && (
-        <Login />
+        <Login setFormType={setFormType}/>
       )}
       {formType == 'Home' && (
         <Home />

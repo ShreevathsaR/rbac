@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 
-const Signup = () => {
+const Signup = ({setFormType}) => {
 
     const [password, setPassword] = useState('')
     const [email, setEmail] = useState('')
@@ -25,6 +25,9 @@ const Signup = () => {
             <input placeholder='Email' value={email} onChange={e => setEmail(e.target.value)}></input>
             <input placeholder='Password' type='password' value={password} onChange={e => setPassword(e.target.value)}></input>
             <button onClick={() => { handleSubmit() }}>Submit</button>
+            <div>
+                <a onClick={()=>{setFormType('')}}>Go Back</a>
+            </div>
             <div>
                 {message}
             </div>

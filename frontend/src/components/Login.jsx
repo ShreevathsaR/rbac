@@ -7,7 +7,6 @@ const Login = ({setFormType}) => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState('')
-    const [token,setToken] = useState('')
     const navigate = useNavigate();
 
 
@@ -21,9 +20,8 @@ const Login = ({setFormType}) => {
         axios.post('http://localhost:5000/login', { email, password })
             .then((res) => {
                 // console.log(res.data.accessToken)
-                setToken(res.data.accessToken)
+                localStorage.setItem('token',res.data.accessToken)
                 setMessage(`Logged in successfully ${email}!!`)
-                // navigate('/home')
             })
             .catch(err => {
                 console.log(err)
@@ -32,6 +30,8 @@ const Login = ({setFormType}) => {
     }
 
     const accessProtectedRoute = () => {
+        const token = localStorage.getItem('token');
+
         if (!token) {
             setMessage("No token found!");
             return;
@@ -43,8 +43,10 @@ const Login = ({setFormType}) => {
             }
         })
         .then(response => {
-            console.log(response.data); // Should print the response data
+            localStorage.setItem('ownerID', response.data.user.id);
+            console.log(response.data.user); // Should print the response data
             setMessage("Access granted to protected route");
+            navigate('/home')
         })
         .catch(err => {
             console.error(err);

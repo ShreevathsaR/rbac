@@ -74,47 +74,80 @@ app.get('/protected', verifyToken, (req, res) => {
     })
 })
 
-app.post('/createproject', (req,res)=>{
-    const {name,owner,collaborators} = req.body;
-
-    console.log(req.body)
+app.post('/createproject', async (req, res) => {
+    const { name, owner, collaborators } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(owner) || collaborators.some(id => !mongoose.Types.ObjectId.isValid(id))) {
         return res.status(400).send('Invalid ObjectId format');
     }
 
-    const newProject = new ProjectModel({name,owner,collaborators})
+    const newProject = new ProjectModel({ name, owner, collaborators });
 
-    newProject.save()
-    .then(project =>{
-        res.status(201).json(project)
-    })
-    .catch(err =>{
-        console.log(err)
-        res.status(400).send('Bad Request')
-    })
-})
+    try {
+        const project = await newProject.save();
+        // console.log(`This is project owner id: ${project.owner}`);
+        // console.log(`This is project collaborators id: ${project.collaborators}`);
 
-app.get('/projects', (req, res) => {
+        const projectOwnerId = project.owner;
+        const projectCollaboratorsId = project.collaborators;
+
+        const ownerData = await UserModel.findById(projectOwnerId).exec();
+        const ownerEmail = ownerData ? ownerData.email : 'Owner email not found';
+
+        const collaboratorsData = await UserModel.find({ _id: { $in: projectCollaboratorsId } }).exec();
+        const collaboratorsEmails = collaboratorsData.map(collaborator => collaborator.email);
+
+        res.status(201).json({
+            project,
+            ownerEmail,
+            collaboratorsEmails
+        });
+
+        // console.log('Owner Email:', ownerEmail);
+        // console.log('Collaborators Emails:', collaboratorsEmails);
+    } catch (err) {
+        console.error('Error saving project or fetching user emails:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.get('/projects', async (req, res) => {  // Server request for fetching the projects of a user
     const ownerId = req.query.id;  // Use req.query to extract the query parameter
 
+    
     if (!ownerId) {
         return res.status(400).json({ message: "Owner ID is required" }); // Handle missing owner ID
     }
 
-    ProjectModel.find({ owner: ownerId })
-        .then(response => {
-            if (response.length === 0) {
-                return res.status(404).json({ message: "No projects found for this owner" }); // Handle case where no projects are found
-            }
-            res.json(response);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({ message: "Server error" });
-        });
-});
+    try {
+        const projectData = await ProjectModel.find({ owner: ownerId }).exec();
 
+        if (projectData.length === 0) {
+            return res.status(404).json({ message: "No projects found for this owner" }); // Handle case where no projects are found
+        }
+
+        const projectDetails = await Promise.all(projectData.map(async project => {
+            const ownerData = await UserModel.findById(project.owner).exec();
+            const ownerEmail = ownerData ? ownerData.email : 'Owner email not found';
+
+            const collaboratorsData = await UserModel.find({ _id: { $in: project.collaborators } }).exec();
+            const collaboratorsEmail = collaboratorsData.map(collaborator => collaborator.email);
+
+            return {
+                ...project._doc, // spread the project document data
+                ownerEmail,
+                collaboratorsEmail
+            };
+        }));
+
+        console.log(projectDetails);
+        res.json(projectDetails);
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 
 app.listen(5000, () => {
     console.log("Server is running on port 5000!!")
